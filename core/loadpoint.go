@@ -851,6 +851,49 @@ func (lp *LoadPoint) pvMaxCurrent(mode api.ChargeMode, sitePower float64) float6
 	return targetCurrent
 }
 
+func (lp *LoadPoint) scalePhasesTo(phases int64) error {
+	err := lp.phases1p3p(phases)
+	if err == nil {
+		lp.activePhases = phases
+	}
+
+	return err
+}
+
+// scalePhases adjusts the number of active phases
+func (lp *LoadPoint) scalePhases(sitePower float64) error {
+	targetCurrent, _ := lp.targetCurrent(sitePower)
+
+	// scale down
+	if lp.activePhases > 1 && targetCurrent < lp.MinCurrent && sitePower >= lp.Disable.Threshold {
+		return lp.scalePhasesTo(1)
+	}
+
+	// scale up
+	if lp.activePhases == 1 && targetCurrent >= lp.MaxCurrent && sitePower <= 0 {
+		return lp.scalePhasesTo(3)
+	}
+
+	return nil
+}
+
+// phases1p3p implements the Charger.ChargePhases interface
+func (lp *LoadPoint) phases1p3p(phases int64) error {
+	if cp, ok := lp.charger.(api.ChargePhases); ok {
+		// switch only if phases state unknown or change needed
+		if lp.phases != phases {
+			err := cp.Phases1p3p(phases)
+			if err == nil {
+				lp.phases = phases
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // updateChargePower updates charge meter power
 func (lp *LoadPoint) updateChargePower() {
 	err := retry.Do(func() error {
