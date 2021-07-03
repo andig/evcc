@@ -62,7 +62,7 @@ func NewEMobilityProvider(log *util.Logger, identity *Identity, token oauth2.Tok
 	impl := &EMobilityProvider{
 		log:      log,
 		token:    token,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 		identity: identity,
 	}
 

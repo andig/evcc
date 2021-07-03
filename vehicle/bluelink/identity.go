@@ -49,7 +49,7 @@ type Identity struct {
 func NewIdentity(log *util.Logger, config Config) (*Identity, error) {
 	v := &Identity{
 		log:    log,
-		Helper: request.NewHelper(log),
+		Helper: request.NewHelper(log, request.WithMetricsPush),
 		config: config,
 	}
 

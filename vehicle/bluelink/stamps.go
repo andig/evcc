@@ -31,7 +31,7 @@ var (
 	mu      sync.Mutex
 	updater map[string]struct{} = make(map[string]struct{})
 
-	client = request.NewHelper(util.NewLogger("http"))
+	client = request.NewHelper(util.NewLogger("http"), request.WithMetricsPush)
 	brands = map[string]string{
 		"693a33fa-c117-43f2-ae3b-61a02d24f417": "kia",
 		"99cfff84-f4e2-4be8-a5ed-e5b755eb6581": "hyundai",

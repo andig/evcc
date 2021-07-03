@@ -186,7 +186,12 @@ func run(cmd *cobra.Command, args []string) {
 	socketHub := server.NewSocketHub()
 	httpd := server.NewHTTPd(uri, site, socketHub, cache)
 
-	// metrics
+	// push metrics
+	if !viper.GetBool("reportingdisabled") {
+		configureReporting()
+	}
+
+	// expose metrics
 	if viper.GetBool("metrics") {
 		httpd.Router().Handle("/metrics", promhttp.Handler())
 	}

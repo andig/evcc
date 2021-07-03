@@ -62,7 +62,7 @@ func NewBMWFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 
 	v := &BMW{
 		embed:    &cc.embed,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 		user:     cc.User,
 		password: cc.Password,
 		vin:      strings.ToUpper(cc.VIN),

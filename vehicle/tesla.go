@@ -58,7 +58,7 @@ func NewTeslaFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 
 	// authenticated http client with logging injected to the Tesla client
 	log := util.NewLogger("tesla")
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, request.NewHelper(log).Client)
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, request.NewHelper(log, request.WithMetricsPush).Client)
 
 	var options []tesla.ClientOption
 	if cc.Tokens.Access != "" {

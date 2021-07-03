@@ -12,7 +12,10 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-var Host = "cloud.evcc.io:8080"
+const (
+	Grpc = "cloud.evcc.io:8080"
+	Push = "http://cloud.evcc.io:9091"
+)
 
 var (
 	conn *grpc.ClientConn

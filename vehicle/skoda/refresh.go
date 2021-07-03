@@ -18,7 +18,7 @@ type tokenRefresher struct {
 
 func Refresher(log *util.Logger, login func() (oauth.Token, error)) oauth.TokenRefresher {
 	return &tokenRefresher{
-		Helper: request.NewHelper(log),
+		Helper: request.NewHelper(log, request.WithMetricsPush),
 		login:  login,
 	}
 }

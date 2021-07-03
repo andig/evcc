@@ -8,26 +8,29 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andig/evcc/server/metrics"
 	"github.com/andig/evcc/util"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type roundTripper struct {
-	log  *util.Logger
-	base http.RoundTripper
+var _ http.RoundTripper = (*RoundTripper)(nil)
+
+type RoundTripper struct {
+	log         *util.Logger
+	base        http.RoundTripper
+	MetricsPush bool
 }
 
 const max = 2048 * 2
 
 var (
-	reqMetric *prometheus.SummaryVec
-	resMetric *prometheus.CounterVec
+	labels                   = []string{"host"}
+	reqMetric, reqMetricPush *prometheus.SummaryVec
+	resMetric, resMetricPush *prometheus.CounterVec
 )
 
-func init() {
-	labels := []string{"host"}
-
-	reqMetric = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+func sumVec() *prometheus.SummaryVec {
+	return prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace: "evcc",
 		Subsystem: "http",
 		Name:      "request_duration_seconds",
@@ -38,20 +41,31 @@ func init() {
 			0.99: 0.001, // 99th percentile with a max. absolute error of 0.001
 		},
 	}, labels)
+}
 
-	resMetric = prometheus.NewCounterVec(prometheus.CounterOpts{
+func countVec() *prometheus.CounterVec {
+	return prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "evcc",
 		Subsystem: "http",
 		Name:      "request_total",
 		Help:      "Total count of HTTP requests",
 	}, append(labels, "status"))
+}
+
+func init() {
+	reqMetric = sumVec()
+	reqMetricPush = sumVec()
+
+	resMetric = countVec()
+	resMetricPush = countVec()
 
 	prometheus.MustRegister(reqMetric, resMetric)
+	metrics.PushRegistry.MustRegister(reqMetricPush, resMetricPush)
 }
 
 // NewTripper creates a logging roundtrip handler
-func NewTripper(log *util.Logger, base http.RoundTripper) http.RoundTripper {
-	tripper := &roundTripper{
+func NewTripper(log *util.Logger, base http.RoundTripper) *RoundTripper {
+	tripper := &RoundTripper{
 		log:  log,
 		base: base,
 	}
@@ -66,7 +80,21 @@ func min(a, b int) int {
 	return b
 }
 
-func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (r *RoundTripper) updateReq(host string, d time.Duration) {
+	reqMetric.WithLabelValues(host).Observe(d.Seconds())
+	if r.MetricsPush {
+		reqMetricPush.WithLabelValues(host).Observe(d.Seconds())
+	}
+}
+
+func (r *RoundTripper) updateRes(host, status string) {
+	resMetric.WithLabelValues(host, status).Add(1)
+	if r.MetricsPush {
+		resMetricPush.WithLabelValues(host, status).Add(1)
+	}
+}
+
+func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	r.log.TRACE.Printf("%s %s", req.Method, req.URL.String())
 
 	var bld strings.Builder
@@ -78,17 +106,17 @@ func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	startTime := time.Now()
 	resp, err := r.base.RoundTrip(req)
 
-	reqMetric.WithLabelValues(req.URL.Hostname()).Observe(time.Since(startTime).Seconds())
+	r.updateReq(req.URL.Hostname(), time.Since(startTime))
 
 	if err == nil {
-		resMetric.WithLabelValues(req.URL.Hostname(), strconv.Itoa(resp.StatusCode)).Add(1)
+		r.updateRes(req.URL.Hostname(), strconv.Itoa(resp.StatusCode))
 
 		if body, err := httputil.DumpResponse(resp, true); err == nil {
 			bld.WriteString("\n\n")
 			bld.Write(bytes.TrimSpace(body[:min(max, len(body))]))
 		}
 	} else {
-		resMetric.WithLabelValues(req.URL.Hostname(), "999").Add(1)
+		r.updateRes(req.URL.Hostname(), "999")
 	}
 
 	if bld.Len() > 0 {

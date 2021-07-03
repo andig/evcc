@@ -43,7 +43,7 @@ func NewAPI(log *util.Logger, identity *Identity, cache time.Duration) *API {
 	v := &API{
 		log:      log,
 		identity: identity,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 	}
 
 	// api is unbelievably slow when retrieving status

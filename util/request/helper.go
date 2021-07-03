@@ -16,13 +16,25 @@ type Helper struct {
 	*http.Client
 }
 
+type helperOption func(*Helper)
+
+// WithMetricsPush enables request helper to push metrics
+func WithMetricsPush(h *Helper) {
+	h.Transport.(*RoundTripper).MetricsPush = true
+}
+
 // NewHelper creates http helper for simplified PUT GET logic
-func NewHelper(log *util.Logger) *Helper {
+func NewHelper(log *util.Logger, options ...helperOption) *Helper {
 	r := &Helper{
 		Client: &http.Client{
 			Timeout:   Timeout,
 			Transport: NewTripper(log, http.DefaultTransport),
 		},
+	}
+
+	// apply options
+	for _, o := range options {
+		o(r)
 	}
 
 	return r

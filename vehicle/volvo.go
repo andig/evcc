@@ -112,7 +112,7 @@ func NewVolvoFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 
 	v := &Volvo{
 		embed:    &cc.embed,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 		user:     cc.User,
 		password: cc.Password,
 		vin:      cc.VIN,

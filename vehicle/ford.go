@@ -63,7 +63,7 @@ func NewFordFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 
 	v := &Ford{
 		embed:    &cc.embed,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 		log:      log,
 		user:     cc.User,
 		password: cc.Password,

@@ -49,7 +49,7 @@ func NewCloudFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 		return nil, errors.New("missing required token")
 	}
 
-	host := util.Getenv("GRPC_URI", cloud.Host)
+	host := util.Getenv("GRPC_URI", cloud.Grpc)
 	conn, err := cloud.Connection(host)
 	if err != nil {
 		return nil, err

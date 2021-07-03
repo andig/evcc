@@ -43,7 +43,7 @@ type Identity struct {
 func NewIdentity(log *util.Logger, user, password string) *Identity {
 	v := &Identity{
 		log:      log,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 		user:     user,
 		password: password,
 	}

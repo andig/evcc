@@ -4,6 +4,11 @@ interval: 10s # control cycle interval
 # sponsor token enables optional features (request at https://cloud.evcc.io)
 # sponsortoken:
 
+# reporting gathers anonymous metrics about http performance
+# collecting these metrics allows us to understand issues with vehicle vendor APIs
+# metrics are pushed once per minute
+reportingdisabled: false
+
 # log settings
 log: error
 levels:

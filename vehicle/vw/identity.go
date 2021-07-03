@@ -45,7 +45,7 @@ type Identity struct {
 func NewIdentity(log *util.Logger) *Identity {
 	v := &Identity{
 		log:    log,
-		Helper: request.NewHelper(log),
+		Helper: request.NewHelper(log, request.WithMetricsPush),
 	}
 
 	return v

@@ -46,7 +46,7 @@ type Provider struct {
 func NewProvider(log *util.Logger, identity *Identity, token oauth2.Token, vin string, cache time.Duration) *Provider {
 	impl := &Provider{
 		log:      log,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 		token:    token,
 		identity: identity,
 	}

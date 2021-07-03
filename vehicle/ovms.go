@@ -58,7 +58,7 @@ func NewOvmsFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 
 	v := &Ovms{
 		embed:     &cc.embed,
-		Helper:    request.NewHelper(log),
+		Helper:    request.NewHelper(log, request.WithMetricsPush),
 		user:      cc.User,
 		password:  cc.Password,
 		vehicleId: cc.VehicleID,

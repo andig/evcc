@@ -28,7 +28,7 @@ type API struct {
 // NewAPI creates a new vehicle
 func NewAPI(log *util.Logger, brand, realm, id, secret string) *API {
 	v := &API{
-		Helper: request.NewHelper(log),
+		Helper: request.NewHelper(log, request.WithMetricsPush),
 		brand:  brand,
 		realm:  realm,
 		id:     id,

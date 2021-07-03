@@ -52,7 +52,7 @@ func NewNiuFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 
 	v := &Niu{
 		embed:    &cc.embed,
-		Helper:   request.NewHelper(log),
+		Helper:   request.NewHelper(log, request.WithMetricsPush),
 		user:     cc.User,
 		password: cc.Password,
 		serial:   strings.ToUpper(cc.Serial),

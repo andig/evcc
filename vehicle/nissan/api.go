@@ -28,7 +28,7 @@ type API struct {
 
 func NewAPI(log *util.Logger, identity oauth2.TokenSource, vin string) *API {
 	v := &API{
-		Helper: request.NewHelper(log),
+		Helper: request.NewHelper(log, request.WithMetricsPush),
 		VIN:    vin,
 	}
 
