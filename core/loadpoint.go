@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/core/soc"
 	"github.com/andig/evcc/core/wrapper"
 	"github.com/andig/evcc/provider"
@@ -112,12 +113,12 @@ type LoadPoint struct {
 	vehicleIdError error // state of last vehicle identification
 
 	// cached state
-	status         api.ChargeStatus // Charger status
-	remoteDemand   RemoteDemand     // External status demand
-	chargePower    float64          // Charging power
-	chargeCurrents []float64        // Phase currents
-	connectedTime  time.Time        // Time when vehicle was connected
-	pvTimer        time.Time        // PV enabled/disable timer
+	status         api.ChargeStatus       // Charger status
+	remoteDemand   loadpoint.RemoteDemand // External status demand
+	chargePower    float64                // Charging power
+	chargeCurrents []float64              // Phase currents
+	connectedTime  time.Time              // Time when vehicle was connected
+	pvTimer        time.Time              // PV enabled/disable timer
 
 	socCharge      float64       // Vehicle SoC
 	chargedEnergy  float64       // Charged energy while connected in Wh
@@ -202,7 +203,7 @@ func NewLoadPointFromConfig(log *util.Logger, cp configProvider, other map[strin
 	lp.configureChargerType(lp.charger)
 
 	// allow target charge handler to access loadpoint
-	lp.socTimer = soc.NewTimer(lp.log, lp.adapter(), lp.MaxCurrent)
+	lp.socTimer = soc.NewTimer(lp.log, &adapter{LoadPoint: lp})
 	if lp.Enable.Threshold > lp.Disable.Threshold {
 		log.WARN.Printf("PV mode enable threshold (%.0fW) is larger than disable threshold (%.0fW)", lp.Enable.Threshold, lp.Disable.Threshold)
 	}
@@ -590,7 +591,7 @@ func (lp *LoadPoint) climateActive() bool {
 }
 
 // remoteControlled returns true if remote control status is active
-func (lp *LoadPoint) remoteControlled(demand RemoteDemand) bool {
+func (lp *LoadPoint) remoteControlled(demand loadpoint.RemoteDemand) bool {
 	lp.Lock()
 	defer lp.Unlock()
 
@@ -1033,7 +1034,7 @@ func (lp *LoadPoint) Update(sitePower float64) {
 	var err error
 
 	// track if remote disabled is actually active
-	remoteDisabled := RemoteEnable
+	remoteDisabled := loadpoint.RemoteEnable
 
 	// execute loading strategy
 	switch {
@@ -1053,8 +1054,8 @@ func (lp *LoadPoint) Update(sitePower float64) {
 		lp.socTimer.Reset() // once SoC is reached, the target charge request is removed
 
 	// OCPP has priority over target charging
-	case lp.remoteControlled(RemoteHardDisable):
-		remoteDisabled = RemoteHardDisable
+	case lp.remoteControlled(loadpoint.RemoteHardDisable):
+		remoteDisabled = loadpoint.RemoteHardDisable
 		fallthrough
 
 	case mode == api.ModeOff:
@@ -1068,9 +1069,9 @@ func (lp *LoadPoint) Update(sitePower float64) {
 		err = lp.setLimit(lp.GetMaxCurrent(), true)
 
 	// target charging
-	case lp.socTimer.StartRequired():
+	case lp.socTimer.DemandActive():
 		targetCurrent := lp.socTimer.Handle()
-		err = lp.setLimit(targetCurrent, false)
+		err = lp.setLimit(targetCurrent, true)
 
 	case mode == api.ModeMinPV || mode == api.ModePV:
 		targetCurrent := lp.pvMaxCurrent(mode, sitePower)
@@ -1083,8 +1084,8 @@ func (lp *LoadPoint) Update(sitePower float64) {
 		}
 
 		// Sunny Home Manager
-		if lp.remoteControlled(RemoteSoftDisable) {
-			remoteDisabled = RemoteSoftDisable
+		if lp.remoteControlled(loadpoint.RemoteSoftDisable) {
+			remoteDisabled = loadpoint.RemoteSoftDisable
 			targetCurrent = 0
 			required = true
 		}

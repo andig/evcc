@@ -10,6 +10,7 @@ import (
 
 	"github.com/andig/evcc/api/proto/pb"
 	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/hems"
 	"github.com/andig/evcc/provider/javascript"
 	"github.com/andig/evcc/provider/mqtt"
@@ -86,8 +87,8 @@ func configureSponsorship(token string) error {
 	return err
 }
 
-// setup influx databases
-func configureDatabase(conf server.InfluxConfig, loadPoints []core.LoadPointAPI, in <-chan util.Param) {
+// setup influx database
+func configureDatabase(conf server.InfluxConfig, loadPoints []loadpoint.API, in <-chan util.Param) {
 	influx := server.NewInfluxClient(
 		conf.URL,
 		conf.Token,

@@ -4,41 +4,16 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/core/wrapper"
 )
 
 // LoadpointController gives access to loadpoint
 type LoadpointController interface {
-	LoadpointControl(LoadPointAPI)
+	LoadpointControl(loadpoint.API)
 }
 
-// LoadPointAPI is the external loadpoint API
-type LoadPointAPI interface {
-	Name() string
-	HasChargeMeter() bool
-
-	// status
-	GetStatus() api.ChargeStatus
-
-	// settings
-	GetMode() api.ChargeMode
-	SetMode(api.ChargeMode)
-	GetTargetSoC() int
-	SetTargetSoC(int) error
-	GetMinSoC() int
-	SetMinSoC(int) error
-	SetTargetCharge(time.Time, int)
-	RemoteControl(string, RemoteDemand)
-
-	// energy
-	GetChargePower() float64
-	GetMinCurrent() float64
-	SetMinCurrent(float64)
-	GetMaxCurrent() float64
-	SetMaxCurrent(float64)
-	GetMinPower() float64
-	GetMaxPower() float64
-}
+var _ loadpoint.API = (*LoadPoint)(nil)
 
 // GetStatus returns the charging status
 func (lp *LoadPoint) GetStatus() api.ChargeStatus {
@@ -148,7 +123,7 @@ func (lp *LoadPoint) SetTargetCharge(finishAt time.Time, targetSoC int) {
 }
 
 // RemoteControl sets remote status demand
-func (lp *LoadPoint) RemoteControl(source string, demand RemoteDemand) {
+func (lp *LoadPoint) RemoteControl(source string, demand loadpoint.RemoteDemand) {
 	lp.Lock()
 	defer lp.Unlock()
 

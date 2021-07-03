@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/util"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	influxlog "github.com/influxdata/influxdb-client-go/v2/log"
@@ -73,7 +73,7 @@ func (m *Influx) supportedType(p util.Param) bool {
 }
 
 // Run Influx publisher
-func (m *Influx) Run(loadPoints []core.LoadPointAPI, in <-chan util.Param) {
+func (m *Influx) Run(loadPoints []loadpoint.API, in <-chan util.Param) {
 	writer := m.client.WriteAPI(m.org, m.database)
 
 	// log errors

@@ -13,7 +13,8 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
-	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
+	"github.com/andig/evcc/core/site"
 	"github.com/andig/evcc/server"
 	"github.com/andig/evcc/util"
 	"github.com/denisbrodbeck/machineid"
@@ -48,11 +49,11 @@ type SEMP struct {
 	uid          string
 	hostURI      string
 	port         int
-	site         core.SiteAPI
+	site         site.API
 }
 
 // New generates SEMP Gateway listening at /semp endpoint
-func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache, httpd *server.HTTPd) (*SEMP, error) {
+func New(conf map[string]interface{}, site site.API, cache *util.Cache, httpd *server.HTTPd) (*SEMP, error) {
 	cc := struct {
 		DeviceID     string
 		AllowControl bool
@@ -346,7 +347,7 @@ func (s *SEMP) deviceID(id int) string {
 	return fmt.Sprintf(sempDeviceId, ^uint64(0xffff<<48)&(binary.BigEndian.Uint64(did)+uint64(id)))
 }
 
-func (s *SEMP) deviceInfo(id int, lp core.LoadPointAPI) DeviceInfo {
+func (s *SEMP) deviceInfo(id int, lp loadpoint.API) DeviceInfo {
 	method := MethodEstimation
 	if lp.HasChargeMeter() {
 		method = MethodMeasurement
@@ -382,7 +383,7 @@ func (s *SEMP) allDeviceInfo() (res []DeviceInfo) {
 	return res
 }
 
-func (s *SEMP) deviceStatus(id int, lp core.LoadPointAPI) DeviceStatus {
+func (s *SEMP) deviceStatus(id int, lp loadpoint.API) DeviceStatus {
 	chargePower := lp.GetChargePower()
 
 	mode := lp.GetMode()
@@ -421,7 +422,7 @@ func (s *SEMP) allDeviceStatus() (res []DeviceStatus) {
 
 // TODO remove GetChecked function
 
-func (s *SEMP) planningRequest(id int, lp core.LoadPointAPI) (res PlanningRequest) {
+func (s *SEMP) planningRequest(id int, lp loadpoint.API) (res PlanningRequest) {
 	mode := lp.GetMode()
 	charging := lp.GetStatus() == api.StatusC
 	connected := charging || lp.GetStatus() == api.StatusB
@@ -514,9 +515,9 @@ func (s *SEMP) deviceControlHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			demand := core.RemoteSoftDisable
+			demand := loadpoint.RemoteSoftDisable
 			if dev.On {
-				demand = core.RemoteEnable
+				demand = loadpoint.RemoteEnable
 			}
 
 			lp.RemoteControl(sempController, demand)

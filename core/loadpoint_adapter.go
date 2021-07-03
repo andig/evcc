@@ -1,27 +1,17 @@
 package core
 
-import "github.com/andig/evcc/core/soc"
+import (
+	"github.com/andig/evcc/core/soc"
+)
 
 type adapter struct {
-	lp *LoadPoint
-}
-
-func (lp *LoadPoint) adapter() soc.Adapter {
-	return &adapter{lp: lp}
+	*LoadPoint
 }
 
 func (a *adapter) Publish(key string, val interface{}) {
-	a.lp.publish(key, val)
+	a.LoadPoint.publish(key, val)
 }
 
 func (a *adapter) SocEstimator() *soc.Estimator {
-	return a.lp.socEstimator
-}
-
-func (a *adapter) ActivePhases() int64 {
-	return a.lp.Phases
-}
-
-func (a *adapter) Voltage() float64 {
-	return Voltage
+	return a.LoadPoint.socEstimator
 }

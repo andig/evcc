@@ -4,14 +4,10 @@ import (
 	"errors"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core/site"
 )
 
-// SiteAPI is the external site API
-type SiteAPI interface {
-	Healthy() bool
-	LoadPoints() []LoadPointAPI
-	SetPrioritySoC(float64) error
-}
+var _ site.API = (*Site)(nil)
 
 // GetPrioritySoC returns the PrioritySoC
 func (site *Site) GetPrioritySoC() float64 {

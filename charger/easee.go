@@ -9,6 +9,7 @@ import (
 	"github.com/andig/evcc/api"
 	"github.com/andig/evcc/charger/easee"
 	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/util"
 	"github.com/andig/evcc/util/request"
 	"github.com/andig/evcc/util/sponsor"
@@ -23,7 +24,7 @@ type Easee struct {
 	status            easee.ChargerStatus
 	updated           time.Time
 	cache             time.Duration
-	lp                core.LoadPointAPI
+	lp                loadpoint.API
 	lastSmartCharging bool
 	lastChargeMode    api.ChargeMode
 	log               *util.Logger
@@ -317,6 +318,6 @@ func (c *Easee) Currents() (float64, float64, float64, error) {
 var _ core.LoadpointController = (*Easee)(nil)
 
 // LoadpointControl implements core.LoadpointController
-func (c *Easee) LoadpointControl(lp core.LoadPointAPI) {
+func (c *Easee) LoadpointControl(lp loadpoint.API) {
 	c.lp = lp
 }
