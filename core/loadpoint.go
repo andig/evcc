@@ -874,7 +874,7 @@ func (lp *LoadPoint) updateChargePower() {
 // updateChargeCurrents uses MeterCurrent interface to count phases with current >=1A
 func (lp *LoadPoint) updateChargeCurrents() {
 	lp.chargeCurrents = nil
-	phaseMeter, ok := lp.chargeMeter.(api.MeterCurrent)
+	phaseMeter, ok := api.GetMeterCurrent(lp.chargeMeter)
 	if !ok {
 		return
 	}

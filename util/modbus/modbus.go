@@ -18,11 +18,13 @@ const WriteSingleRegister = 6 // modbus.FuncCodeWriteSingleRegister
 
 // Settings contains the ModBus settings
 type Settings struct {
-	ID                  uint8
-	SubDevice           int
-	URI, Device, Comset string
-	Baudrate            int
-	RTU                 *bool // indicates RTU over TCP if true
+	ID        uint8 `default:"1" validate:"required"`
+	SubDevice int
+	URI       string
+	Device    string
+	Comset    string `validate:"oneof=8E1 8N1"`
+	Baudrate  int
+	RTU       *bool // indicates RTU over TCP if true
 }
 
 // Connection decorates a meters.Connection with transparent slave id and error handling

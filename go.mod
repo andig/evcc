@@ -21,6 +21,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/go-ping/ping v0.0.0-20210506233800-ff8be3320020
+	github.com/go-playground/validator/v10 v10.6.1
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gokrazy/updater v0.0.0-20210130175436-d85b92498a28
@@ -59,6 +60,7 @@ require (
 	github.com/prometheus/common v0.29.0 // indirect
 	github.com/robertkrimen/otto v0.0.0-20210614181706-373ff5438452
 	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/jwalterweatherman v1.1.0
 	github.com/spf13/pflag v1.0.5

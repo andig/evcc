@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/andig/evcc/api"
 	"github.com/andig/evcc/util"
 	"github.com/andig/evcc/util/modbus"
 	"github.com/volkszaehler/mbmd/meters"
@@ -13,8 +12,20 @@ import (
 	"github.com/volkszaehler/mbmd/meters/sunspec"
 )
 
-// Modbus is an api.Meter implementation with configurable getters and setters.
-type Modbus struct {
+func init() {
+	registry.Add("modbus", "ModBus", new(modbusMeter))
+}
+
+// modbusMeter is an api.Meter implementation with configurable getters and setters.
+type modbusMeter struct {
+	modbus.Settings `mapstructure:",squash"`
+
+	Model   string
+	Power   string `default:"Power"`
+	Energy  string
+	SoCConf string `mapstructure:"soc"`
+	Timeout time.Duration
+
 	log      *util.Logger
 	conn     *modbus.Connection
 	device   meters.Device
@@ -23,104 +34,69 @@ type Modbus struct {
 	opSoC    modbus.Operation
 }
 
-func init() {
-	registry.Add("modbus", NewModbusFromConfig)
-}
-
-//go:generate go run ../cmd/tools/decorate.go -f decorateModbus -b api.Meter -t "api.MeterEnergy,TotalEnergy,func() (float64, error)" -t "api.Battery,SoC,func() (float64, error)"
-
-// NewModbusFromConfig creates api.Meter from config
-func NewModbusFromConfig(other map[string]interface{}) (api.Meter, error) {
-	cc := struct {
-		Model              string
-		modbus.Settings    `mapstructure:",squash"`
-		Power, Energy, SoC string
-		Timeout            time.Duration
-	}{
-		Power: "Power",
-		Settings: modbus.Settings{
-			ID: 1,
-		},
-	}
-
-	if err := util.DecodeOther(other, &cc); err != nil {
-		return nil, err
-	}
-
+func (m *modbusMeter) Connect() error {
 	// assume RTU if not set and this is a known RS485 meter model
-	if cc.RTU == nil {
-		b := modbus.IsRS485(cc.Model)
-		cc.RTU = &b
+	if m.RTU == nil {
+		b := modbus.IsRS485(m.Model)
+		m.RTU = &b
 	}
 
-	log := util.NewLogger("modbus")
+	m.log = util.NewLogger("modbus")
 
-	conn, err := modbus.NewConnection(cc.URI, cc.Device, cc.Comset, cc.Baudrate, *cc.RTU, cc.ID)
+	var err error
+	m.conn, err = modbus.NewConnection(m.URI, m.Device, m.Comset, m.Baudrate, *m.RTU, m.ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// set non-default timeout
-	if cc.Timeout > 0 {
-		conn.Timeout(cc.Timeout)
+	if m.Timeout > 0 {
+		m.conn.Timeout(m.Timeout)
 	}
 
-	conn.Logger(log.TRACE)
+	m.conn.Logger(m.log.TRACE)
 
 	// prepare device
-	device, err := modbus.NewDevice(cc.Model, cc.SubDevice)
+	m.device, err = modbus.NewDevice(m.Model, m.SubDevice)
+	if err != nil {
+		return err
+	}
 
-	if err == nil {
-		err = device.Initialize(conn)
+	err = m.device.Initialize(m.conn)
 
-		// silence Kostal implementation errors
-		if errors.Is(err, meters.ErrPartiallyOpened) {
-			err = nil
-		}
+	// silence Kostal implementation errors
+	if errors.Is(err, meters.ErrPartiallyOpened) {
+		err = nil
 	}
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	m := &Modbus{
-		log:    log,
-		conn:   conn,
-		device: device,
+	m.Power = modbus.ReadingName(m.Power)
+	if err := modbus.ParseOperation(m.device, m.Power, &m.opPower); err != nil {
+		return fmt.Errorf("invalid measurement for power: %s", m.Power)
 	}
 
-	cc.Power = modbus.ReadingName(cc.Power)
-	if err := modbus.ParseOperation(device, cc.Power, &m.opPower); err != nil {
-		return nil, fmt.Errorf("invalid measurement for power: %s", cc.Power)
+	if m.Energy != "" {
+		m.Energy = modbus.ReadingName(m.Energy)
+		if err := modbus.ParseOperation(m.device, m.Energy, &m.opEnergy); err != nil {
+			return fmt.Errorf("invalid measurement for energy: %s", m.Energy)
+		}
 	}
 
 	// decorate energy reading
-	var totalEnergy func() (float64, error)
-	if cc.Energy != "" {
-		cc.Energy = modbus.ReadingName(cc.Energy)
-		if err := modbus.ParseOperation(device, cc.Energy, &m.opEnergy); err != nil {
-			return nil, fmt.Errorf("invalid measurement for energy: %s", cc.Energy)
+	if m.SoCConf != "" {
+		m.SoCConf = modbus.ReadingName(m.SoCConf)
+		if err := modbus.ParseOperation(m.device, m.SoCConf, &m.opSoC); err != nil {
+			return fmt.Errorf("invalid measurement for soc: %s", m.SoCConf)
 		}
-
-		totalEnergy = m.totalEnergy
 	}
-
-	// decorate energy reading
-	var soc func() (float64, error)
-	if cc.SoC != "" {
-		cc.SoC = modbus.ReadingName(cc.SoC)
-		if err := modbus.ParseOperation(device, cc.SoC, &m.opSoC); err != nil {
-			return nil, fmt.Errorf("invalid measurement for soc: %s", cc.SoC)
-		}
-
-		soc = m.soc
-	}
-
-	return decorateModbus(m, totalEnergy, soc), nil
+	return nil
 }
 
 // floatGetter executes configured modbus read operation and implements func() (float64, error)
-func (m *Modbus) floatGetter(op modbus.Operation) (float64, error) {
+func (m *modbusMeter) floatGetter(op modbus.Operation) (float64, error) {
 	var res meters.MeasurementResult
 	var err error
 
@@ -155,16 +131,26 @@ func (m *Modbus) floatGetter(op modbus.Operation) (float64, error) {
 }
 
 // CurrentPower implements the api.Meter interface
-func (m *Modbus) CurrentPower() (float64, error) {
+func (m *modbusMeter) CurrentPower() (float64, error) {
 	return m.floatGetter(m.opPower)
 }
 
-// totalEnergy implements the api.MeterEnergy interface
-func (m *Modbus) totalEnergy() (float64, error) {
+// TotalEnergy implements the api.MeterEnergy interface
+func (m *modbusMeter) TotalEnergy() (float64, error) {
 	return m.floatGetter(m.opEnergy)
 }
 
-// soc implements the api.Battery interface
-func (m *Modbus) soc() (float64, error) {
+// HasEnergy implements the api.OptionalMeterEnergy interface
+func (m *modbusMeter) HasEnergy() bool {
+	return m.Energy != ""
+}
+
+// SoC implements the api.Battery interface
+func (m *modbusMeter) SoC() (float64, error) {
 	return m.floatGetter(m.opSoC)
+}
+
+// HasSoC implements the api.OptionalBattery interface
+func (m *modbusMeter) HasSoC() bool {
+	return m.SoCConf != ""
 }

@@ -123,6 +123,13 @@ func (cp *ConfigProvider) configureMeters(conf config) error {
 			return fmt.Errorf("duplicate meter name: %s already defined and must be unique", cc.Name)
 		}
 
+		// connect meter if required
+		if conMeter, ok := m.(api.ConnectMeter); ok {
+			if err := conMeter.Connect(); err != nil {
+				return err
+			}
+		}
+
 		cp.meters[cc.Name] = m
 	}
 

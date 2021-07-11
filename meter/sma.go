@@ -13,111 +13,89 @@ import (
 	"gitlab.com/bboehmke/sunny"
 )
 
-// SMA supporting SMA Home Manager 2.0, SMA Energy Meter 30 and SMA inverter
-type SMA struct {
+func init() {
+	registry.Add("sma", "SMA/Speedwire device (Home Manager/Energy Meter/Inverter)", new(smaMeter))
+}
+
+// smaMeter supporting SMA Home Manager 2.0, SMA Energy Meter 30 and SMA inverter
+type smaMeter struct {
+	URI       string  `validate:"required_without=Serial"`
+	Interface string  `label:"Name of network interface device is connected to"`
+	Password  string  `default:"0000" meta:"secret"`
+	Serial    uint32  `validate:"required_without=URI"`
+	Power     string  `meta:"hide"`
+	Energy    string  `meta:"hide"`
+	Scale     float64 `default:"1"` // power only
+
+	hasSoc bool
 	log    *util.Logger
-	uri    string
-	iface  string
-	scale  float64
 	device *sma.Device
 }
 
-func init() {
-	registry.Add("sma", NewSMAFromConfig)
-}
+func (sm *smaMeter) Connect() error {
+	sm.log = util.NewLogger("sma")
 
-//go:generate go run ../cmd/tools/decorate.go -f decorateSMA -r api.Meter -b *SMA -t "api.Battery,SoC,func() (float64, error)"
-
-// NewSMAFromConfig creates a SMA Meter from generic config
-func NewSMAFromConfig(other map[string]interface{}) (api.Meter, error) {
-	cc := struct {
-		URI, Password, Interface string
-		Serial                   uint32
-		Power, Energy            string
-		Scale                    float64 // power only
-	}{
-		Password: "0000",
-		Scale:    1,
-	}
-
-	if err := util.DecodeOther(other, &cc); err != nil {
-		return nil, err
-	}
-
-	if cc.Power != "" || cc.Energy != "" {
+	if sm.Power != "" || sm.Energy != "" {
 		util.NewLogger("sma").WARN.Println("energy and power setting are deprecated and will be removed in a future release")
 	}
 
-	return NewSMA(cc.URI, cc.Password, cc.Interface, cc.Serial, cc.Scale)
-}
-
-// NewSMA creates a SMA Meter
-func NewSMA(uri, password, iface string, serial uint32, scale float64) (api.Meter, error) {
-	sm := &SMA{
-		log:   util.NewLogger("sma"),
-		uri:   uri,
-		iface: iface,
-		scale: scale,
-	}
-
-	discoverer, err := sma.GetDiscoverer(iface)
+	discoverer, err := sma.GetDiscoverer(sm.Interface)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get discoverer failed: %w", err)
+		return fmt.Errorf("failed to get discoverer failed: %w", err)
 	}
 
 	switch {
-	case uri != "":
-		sm.device, err = discoverer.DeviceByIP(uri, password)
+	case sm.URI != "":
+		sm.device, err = discoverer.DeviceByIP(sm.URI, sm.Password)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-	case serial > 0:
-		sm.device = discoverer.DeviceBySerial(serial, password)
+	case sm.Serial > 0:
+		sm.device = discoverer.DeviceBySerial(sm.Serial, sm.Password)
 		if sm.device == nil {
-			return nil, fmt.Errorf("device not found: %d", serial)
+			return fmt.Errorf("device not found: %d", sm.Serial)
 		}
 
 	default:
-		return nil, errors.New("missing uri or serial")
+		return errors.New("missing uri or serial")
 	}
 	// start update loop manually to get values as fast as possible
 	sm.device.StartUpdateLoop()
 
 	// decorate api.Battery in case of inverter
-	var soc func() (float64, error)
 	if !sm.device.IsEnergyMeter() {
 		vals, err := sm.device.Values()
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if _, ok := vals[sunny.BatteryCharge]; ok {
-			soc = sm.soc
+			sm.hasSoc = true
 		}
 	}
 
-	return decorateSMA(sm, soc), nil
+	return nil
 }
 
 // CurrentPower implements the api.Meter interface
-func (sm *SMA) CurrentPower() (float64, error) {
+func (sm *smaMeter) CurrentPower() (float64, error) {
 	values, err := sm.device.Values()
-	return sm.scale * (sma.AsFloat(values[sunny.ActivePowerPlus]) - sma.AsFloat(values[sunny.ActivePowerMinus])), err
+	return sm.Scale * (sma.AsFloat(values[sunny.ActivePowerPlus]) - sma.AsFloat(values[sunny.ActivePowerMinus])), err
 }
 
-var _ api.MeterEnergy = (*SMA)(nil)
+var _ api.MeterEnergy = (*smaMeter)(nil)
 
 // TotalEnergy implements the api.MeterEnergy interface
-func (sm *SMA) TotalEnergy() (float64, error) {
+func (sm *smaMeter) TotalEnergy() (float64, error) {
 	values, err := sm.device.Values()
 	return sma.AsFloat(values[sunny.ActiveEnergyPlus]) / 3600000, err
 }
 
-var _ api.MeterCurrent = (*SMA)(nil)
+var _ api.MeterCurrent = (*smaMeter)(nil)
 
 // Currents implements the api.MeterCurrent interface
-func (sm *SMA) Currents() (float64, float64, float64, error) {
+func (sm *smaMeter) Currents() (float64, float64, float64, error) {
 	values, err := sm.device.Values()
 
 	var currents [3]float64
@@ -128,16 +106,21 @@ func (sm *SMA) Currents() (float64, float64, float64, error) {
 	return currents[0], currents[1], currents[2], err
 }
 
-// soc implements the api.Battery interface
-func (sm *SMA) soc() (float64, error) {
+// SoC implements the api.Battery interface
+func (sm *smaMeter) SoC() (float64, error) {
 	values, err := sm.device.Values()
 	return sma.AsFloat(values[sunny.BatteryCharge]), err
 }
 
-var _ api.Diagnosis = (*SMA)(nil)
+// HasSoC implements the api.OptionalBattery interface
+func (sm *smaMeter) HasSoC() bool {
+	return sm.hasSoc
+}
+
+var _ api.Diagnosis = (*smaMeter)(nil)
 
 // Diagnose implements the api.Diagnosis interface
-func (sm *SMA) Diagnose() {
+func (sm *smaMeter) Diagnose() {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 
 	fmt.Fprintf(w, "  IP:\t%s\n", sm.device.Address())

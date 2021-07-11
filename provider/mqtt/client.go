@@ -27,7 +27,7 @@ func ClientID() string {
 
 // Config is the public configuration
 type Config struct {
-	Broker   string
+	Broker   string `validate:"required"`
 	User     string
 	Password string
 	ClientID string

@@ -12,6 +12,7 @@ import (
 
 	"github.com/andig/evcc/api"
 	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/meter"
 	"github.com/andig/evcc/util"
 	"github.com/andig/evcc/util/test"
 	"github.com/gorilla/handlers"
@@ -132,6 +133,16 @@ func TemplatesHandler() http.HandlerFunc {
 		}
 
 		jsonResponse(w, r, res)
+	}
+}
+
+// TypesHandler returns a list of configuration types per class
+func TypesHandler(class string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch class {
+		case "meter":
+			jsonResponse(w, r, meter.Types())
+		}
 	}
 }
 
@@ -327,9 +338,10 @@ type HTTPd struct {
 // NewHTTPd creates HTTP server with configured routes for loadpoint
 func NewHTTPd(url string, site core.SiteAPI, hub *SocketHub, cache *util.Cache) *HTTPd {
 	routes := map[string]route{
-		"health":    {[]string{"GET"}, "/health", HealthHandler(site)},
-		"state":     {[]string{"GET"}, "/state", StateHandler(cache)},
-		"templates": {[]string{"GET"}, "/config/templates/{class:[a-z]+}", TemplatesHandler()},
+		"health":      {[]string{"GET"}, "/health", HealthHandler(site)},
+		"state":       {[]string{"GET"}, "/state", StateHandler(cache)},
+		"templates":   {[]string{"GET"}, "/config/templates/{class:[a-z]+}", TemplatesHandler()},
+		"meter_types": {[]string{"GET"}, "/config/types/meter", TypesHandler("meter")},
 	}
 
 	router := mux.NewRouter().StrictSlash(true)

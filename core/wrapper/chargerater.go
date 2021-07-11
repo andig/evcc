@@ -44,7 +44,7 @@ func (cr *ChargeRater) StartCharge(continued bool) {
 	cr.start = cr.clck.Now()
 
 	// get end energy amount
-	if m, ok := cr.meter.(api.MeterEnergy); ok {
+	if m, ok := api.GetMeterEnergy(cr.meter); ok {
 		if f, err := m.TotalEnergy(); err == nil {
 			cr.startEnergy = f
 			cr.log.DEBUG.Printf("charge start energy: %.3gkWh", f)
@@ -67,7 +67,7 @@ func (cr *ChargeRater) StopCharge() {
 	cr.charging = false
 
 	// get end energy amount
-	if m, ok := cr.meter.(api.MeterEnergy); ok {
+	if m, ok := api.GetMeterEnergy(cr.meter); ok {
 		if f, err := m.TotalEnergy(); err == nil {
 			cr.chargedEnergy += f - cr.startEnergy
 			cr.log.DEBUG.Printf("final charge energy: %.3gkWh", cr.chargedEnergy)
@@ -107,7 +107,7 @@ func (cr *ChargeRater) ChargedEnergy() (float64, error) {
 	}
 
 	// get current energy amount
-	if m, ok := cr.meter.(api.MeterEnergy); ok {
+	if m, ok := api.GetMeterEnergy(cr.meter); ok {
 		f, err := m.TotalEnergy()
 
 		if err == nil {

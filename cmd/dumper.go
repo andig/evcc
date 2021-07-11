@@ -46,25 +46,25 @@ func (d *dumper) Dump(name string, v interface{}) {
 		} else {
 			fmt.Fprintf(w, "Power:\t%.0fW\n", power)
 		}
-	}
 
-	if v, ok := v.(api.MeterEnergy); ok {
-		if energy, err := v.TotalEnergy(); err != nil {
-			fmt.Fprintf(w, "Energy:\t%v\n", err)
-		} else {
-			fmt.Fprintf(w, "Energy:\t%.1fkWh\n", energy)
+		if v, ok := api.GetMeterEnergy(v); ok {
+			if energy, err := v.TotalEnergy(); err != nil {
+				fmt.Fprintf(w, "Energy:\t%v\n", err)
+			} else {
+				fmt.Fprintf(w, "Energy:\t%.1fkWh\n", energy)
+			}
+		}
+
+		if v, ok := api.GetMeterCurrent(v); ok {
+			if i1, i2, i3, err := v.Currents(); err != nil {
+				fmt.Fprintf(w, "Current L1..L3:\t%v\n", err)
+			} else {
+				fmt.Fprintf(w, "Current L1..L3:\t%.3gA %.3gA %.3gA\n", i1, i2, i3)
+			}
 		}
 	}
 
-	if v, ok := v.(api.MeterCurrent); ok {
-		if i1, i2, i3, err := v.Currents(); err != nil {
-			fmt.Fprintf(w, "Current L1..L3:\t%v\n", err)
-		} else {
-			fmt.Fprintf(w, "Current L1..L3:\t%.3gA %.3gA %.3gA\n", i1, i2, i3)
-		}
-	}
-
-	if v, ok := v.(api.Battery); ok {
+	if v, ok := api.GetBattery(v); ok {
 		soc, err := v.SoC()
 
 		for err != nil && errors.Is(err, api.ErrMustRetry) {

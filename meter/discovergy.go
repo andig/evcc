@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/andig/evcc/api"
 	"github.com/andig/evcc/provider"
 	"github.com/andig/evcc/util"
 	"github.com/andig/evcc/util/request"
@@ -14,56 +13,51 @@ import (
 const discovergyAPI = "https://api.discovergy.com/public/v1"
 
 func init() {
-	registry.Add("discovergy", NewDiscovergyFromConfig)
+	registry.Add("discovergy", "Discovergy", new(discovergyMeter))
 }
 
-type discovergyMeter struct {
+type discovergyMeterEntry struct {
 	MeterID          string `json:"meterId"`
 	SerialNumber     string `json:"serialNumber"`
 	FullSerialNumber string `json:"fullSerialNumber"`
 }
 
-// NewDiscovergyFromConfig creates a new configurable meter
-func NewDiscovergyFromConfig(other map[string]interface{}) (api.Meter, error) {
-	cc := struct {
-		User     string
-		Password string
-		Meter    string
-		Scale    float64
-	}{
-		Scale: 1,
-	}
+type discovergyMeter struct {
+	User     string `validate:"required"`
+	Password string `validate:"required"`
+	Meter    string
+	Scale    float64 `default:"1"`
 
-	if err := util.DecodeOther(other, &cc); err != nil {
-		return nil, err
-	}
+	currentPowerG func() (float64, error)
+}
 
+func (m *discovergyMeter) Connect() error {
 	log := util.NewLogger("discgy")
 
 	headers := make(map[string]string)
 	if err := provider.AuthHeaders(log, provider.Auth{
 		Type:     "Basic",
-		User:     cc.User,
-		Password: cc.Password,
+		User:     m.User,
+		Password: m.Password,
 	}, headers); err != nil {
-		return nil, err
+		return err
 	}
 
 	req, err := request.New(http.MethodGet, fmt.Sprintf("%s/meters", discovergyAPI), nil, headers)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var meters []discovergyMeter
+	var meters []discovergyMeterEntry
 	if err := request.NewHelper(log).DoJSON(req, &meters); err != nil {
-		return nil, err
+		return err
 	}
 
 	var meterID string
-	if cc.Meter != "" {
-		for _, m := range meters {
-			if matchesIdentifier(cc.Meter, m) {
-				meterID = m.MeterID
+	if m.Meter != "" {
+		for _, meter := range meters {
+			if matchesIdentifier(m.Meter, meter) {
+				meterID = meter.MeterID
 				break
 			}
 		}
@@ -72,20 +66,26 @@ func NewDiscovergyFromConfig(other map[string]interface{}) (api.Meter, error) {
 	}
 
 	if meterID == "" {
-		return nil, fmt.Errorf("could not determine meter id: %v", funk.Map(meters, func(m discovergyMeter) string {
+		return fmt.Errorf("could not determine meter id: %v", funk.Map(meters, func(m discovergyMeterEntry) string {
 			return m.FullSerialNumber
 		}))
 	}
 
 	uri := fmt.Sprintf("%s/last_reading?meterId=%s", discovergyAPI, meterID)
-	power, err := provider.NewHTTP(log, http.MethodGet, uri, headers, "", false, ".values.power", 0.001*cc.Scale)
+	power, err := provider.NewHTTP(log, http.MethodGet, uri, headers, "", false, ".values.power", 0.001*m.Scale)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	m.currentPowerG = power.FloatGetter()
 
-	return NewConfigurable(power.FloatGetter())
+	return nil
 }
 
-func matchesIdentifier(id string, m discovergyMeter) bool {
+func matchesIdentifier(id string, m discovergyMeterEntry) bool {
 	return id == m.MeterID || id == m.SerialNumber || id == m.FullSerialNumber
+}
+
+// CurrentPower implements the api.Meter interface
+func (m *discovergyMeter) CurrentPower() (float64, error) {
+	return m.currentPowerG()
 }

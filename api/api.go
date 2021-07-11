@@ -44,9 +44,21 @@ type Meter interface {
 	CurrentPower() (float64, error)
 }
 
+// ConnectMeter requires a initialization of the connection
+type ConnectMeter interface {
+	Meter
+	Connect() error
+}
+
 // MeterEnergy is able to provide current energy in kWh
 type MeterEnergy interface {
 	TotalEnergy() (float64, error)
+}
+
+// OptionalMeterEnergy is able to provide current energy in kWh for some instances
+type OptionalMeterEnergy interface {
+	MeterEnergy
+	HasEnergy() bool
 }
 
 // MeterCurrent is able to provide per-line current A
@@ -54,9 +66,21 @@ type MeterCurrent interface {
 	Currents() (float64, float64, float64, error)
 }
 
+// OptionalMeterCurrent is able to provide per-line current A for some instances
+type OptionalMeterCurrent interface {
+	MeterCurrent
+	HasCurrent() bool
+}
+
 // Battery is able to provide battery SoC in %
 type Battery interface {
 	SoC() (float64, error)
+}
+
+// OptionalBattery is able to provide battery SoC in % for some instances
+type OptionalBattery interface {
+	Battery
+	HasSoC() bool
 }
 
 // ChargeState provides current charging status

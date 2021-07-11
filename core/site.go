@@ -252,7 +252,7 @@ func (site *Site) updateMeters() error {
 	}
 
 	// currents
-	if phaseMeter, ok := site.gridMeter.(api.MeterCurrent); err == nil && ok {
+	if phaseMeter, ok := api.GetMeterCurrent(site.gridMeter); err == nil && ok {
 		i1, i2, i3, err := phaseMeter.Currents()
 		if err == nil {
 			site.log.TRACE.Printf("grid currents: %.3gA", []float64{i1, i2, i3})
@@ -286,7 +286,7 @@ func (site *Site) sitePower() (float64, error) {
 
 	// honour battery priority
 	batteryPower := site.batteryPower
-	if battery, ok := site.batteryMeter.(api.Battery); ok {
+	if battery, ok := api.GetBattery(site.batteryMeter); ok {
 		soc, err := battery.SoC()
 		if err != nil {
 			site.log.ERROR.Printf("updating battery soc: %v", err)
