@@ -145,15 +145,6 @@ func (sm *SMA) Diagnose() {
 	fmt.Fprintf(w, "  EnergyMeter:\t%v\n", sm.device.IsEnergyMeter())
 	fmt.Fprintln(w)
 
-	if name, err := sm.device.GetDeviceName(); err == nil {
-		fmt.Fprintf(w, "  Name:\t%s\n", name)
-	}
-
-	if devClass, err := sm.device.GetDeviceClass(); err == nil {
-		fmt.Fprintf(w, "  Device Class:\t0x%X\n", devClass)
-	}
-	fmt.Fprintln(w)
-
 	if values, err := sm.device.Values(); err == nil {
 		ids := make([]sunny.ValueID, 0, len(values))
 		for k := range values {

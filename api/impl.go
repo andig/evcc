@@ -11,7 +11,9 @@ func ChargeModeString(mode string) ChargeMode {
 		return ModeMinPV
 	case string(ModePV):
 		return ModePV
-	default:
+	case string(ModeOff):
 		return ModeOff
+	default:
+		return ""
 	}
 }

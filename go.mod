@@ -69,7 +69,7 @@ require (
 	github.com/thoas/go-funk v0.8.0
 	github.com/tv42/httpunix v0.0.0-20191220191345-2ba4b9c3382c
 	github.com/volkszaehler/mbmd v0.0.0-20210526131012-e1fec7232ed7
-	gitlab.com/bboehmke/sunny v0.13.2
+	gitlab.com/bboehmke/sunny v0.14.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20210615190721-d04028783cf1

@@ -76,6 +76,8 @@ func (d *Discoverer) addDevice(device *sunny.Device) {
 
 	if _, ok := d.devices[device.SerialNumber()]; !ok {
 		d.devices[device.SerialNumber()] = d.createDevice(device)
+	} else {
+		device.Close()
 	}
 }
 

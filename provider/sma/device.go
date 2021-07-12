@@ -25,7 +25,7 @@ func (d *Device) StartUpdateLoop() {
 	d.once.Do(func() {
 		go func() {
 			d.updateValues()
-			for range time.NewTicker(time.Second).C {
+			for range time.NewTicker(time.Second * 5).C {
 				d.updateValues()
 			}
 		}()
@@ -58,7 +58,12 @@ func (d *Device) Values() (map[sunny.ValueID]interface{}, error) {
 		return nil, fmt.Errorf("update timeout: %v", elapsed.Truncate(time.Second))
 	}
 
-	return d.values, nil
+	// return a copy of the map to avoid race conditions
+	values := make(map[sunny.ValueID]interface{}, len(d.values))
+	for key, value := range d.values {
+		values[key] = value
+	}
+	return values, nil
 }
 
 func AsFloat(value interface{}) float64 {
