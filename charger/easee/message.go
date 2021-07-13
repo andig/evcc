@@ -136,14 +136,14 @@ type ChargerSettings struct {
 
 // CircuitSettings is the circuit settings type
 type CircuitSettings struct {
-	DynamicCircuitCurrentP1    *int  `json:"dynamicCircuitCurrentP1,omitempty"`
-	DynamicCircuitCurrentP2    *int  `json:"dynamicCircuitCurrentP2,omitempty"`
-	DynamicCircuitCurrentP3    *int  `json:"dynamicCircuitCurrentP3,omitempty"`
-	MaxCircuitCurrentP1        *int  `json:"maxCircuitCurrentP1,omitempty"`
-	MaxCircuitCurrentP2        *int  `json:"maxCircuitCurrentP2,omitempty"`
-	MaxCircuitCurrentP3        *int  `json:"maxCircuitCurrentP3,omitempty"`
-	EnableIdleCurrent          *bool `json:"enableIdleCurrent,omitempty"`
-	OfflineMaxCircuitCurrentP1 *int  `json:"offlineMaxCircuitCurrentP1,omitempty"`
-	OfflineMaxCircuitCurrentP2 *int  `json:"offlineMaxCircuitCurrentP2,omitempty"`
-	OfflineMaxCircuitCurrentP3 *int  `json:"offlineMaxCircuitCurrentP3,omitempty"`
+	DynamicCircuitCurrentP1    *float64 `json:"dynamicCircuitCurrentP1,omitempty"`
+	DynamicCircuitCurrentP2    *float64 `json:"dynamicCircuitCurrentP2,omitempty"`
+	DynamicCircuitCurrentP3    *float64 `json:"dynamicCircuitCurrentP3,omitempty"`
+	MaxCircuitCurrentP1        *int     `json:"maxCircuitCurrentP1,omitempty"`
+	MaxCircuitCurrentP2        *int     `json:"maxCircuitCurrentP2,omitempty"`
+	MaxCircuitCurrentP3        *int     `json:"maxCircuitCurrentP3,omitempty"`
+	EnableIdleCurrent          *bool    `json:"enableIdleCurrent,omitempty"`
+	OfflineMaxCircuitCurrentP1 *int     `json:"offlineMaxCircuitCurrentP1,omitempty"`
+	OfflineMaxCircuitCurrentP2 *int     `json:"offlineMaxCircuitCurrentP2,omitempty"`
+	OfflineMaxCircuitCurrentP3 *int     `json:"offlineMaxCircuitCurrentP3,omitempty"`
 }

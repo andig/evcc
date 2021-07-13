@@ -27,6 +27,7 @@ type Easee struct {
 	lastSmartCharging bool
 	lastChargeMode    api.ChargeMode
 	log               *util.Logger
+	phases            int
 }
 
 func init() {
@@ -64,6 +65,7 @@ func NewEasee(user, password, charger string, cache time.Duration) (*Easee, erro
 		charger: charger,
 		cache:   cache,
 		log:     log,
+		phases:  3,
 	}
 
 	ts, err := easee.TokenSource(log, user, password)
@@ -270,11 +272,15 @@ var _ api.ChargerEx = (*Easee)(nil)
 
 // MaxCurrentMillis implements the api.ChargerEx interface
 func (c *Easee) MaxCurrentMillis(current float64) error {
-	cur := int(current)
+	var current23 float64
+	if c.phases > 1 {
+		current23 = current
+	}
+
 	data := easee.CircuitSettings{
-		DynamicCircuitCurrentP1: &cur,
-		DynamicCircuitCurrentP2: &cur,
-		DynamicCircuitCurrentP3: &cur,
+		DynamicCircuitCurrentP1: &current,
+		DynamicCircuitCurrentP2: &current23,
+		DynamicCircuitCurrentP3: &current23,
 	}
 
 	uri := fmt.Sprintf("%s/sites/%d/circuits/%d/settings", easee.API, c.site, c.circuit)
@@ -285,6 +291,14 @@ func (c *Easee) MaxCurrentMillis(current float64) error {
 	}
 
 	return err
+}
+
+var _ api.ChargePhases = (*Easee)(nil)
+
+// Phases1p3p implements the api.ChargePhases interface.
+func (c *Easee) Phases1p3p(phases int) error {
+	c.phases = phases
+	return nil
 }
 
 var _ api.Meter = (*Easee)(nil)
