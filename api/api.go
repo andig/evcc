@@ -77,6 +77,11 @@ type ChargerEx interface {
 	MaxCurrentMillis(current float64) error
 }
 
+// ChargePhases provides 1p3p switching
+type ChargePhases interface {
+	Phases1p3p(phases int) error
+}
+
 // Diagnosis is a helper interface that allows to dump diagnostic data to console
 type Diagnosis interface {
 	Diagnose()

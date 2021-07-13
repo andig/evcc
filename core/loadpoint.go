@@ -96,6 +96,7 @@ type LoadPoint struct {
 	GuardDuration time.Duration // charger enable/disable minimum holding time
 
 	enabled       bool      // Charger enabled state
+	activePhases  int64     // Charger active phases
 	chargeCurrent float64   // Charger current limit
 	guardUpdated  time.Time // Charger enabled/disabled timestamp
 	socUpdated    time.Time // SoC updated timestamp (poll: connected)
@@ -374,7 +375,7 @@ func (lp *LoadPoint) evChargeCurrentHandler(current float64) {
 // If physical charge meter is present this handler is not used.
 // The actual value is published by the evChargeCurrentHandler
 func (lp *LoadPoint) evChargeCurrentWrappedMeterHandler(current float64) {
-	power := current * float64(lp.Phases) * Voltage
+	power := current * float64(lp.activePhases) * Voltage
 
 	if !lp.enabled || lp.GetStatus() != api.StatusC {
 		// if disabled we cannot be charging
@@ -404,6 +405,8 @@ func (lp *LoadPoint) Prepare(uiChan chan<- util.Param, pushChan chan<- push.Even
 	lp.pushChan = pushChan
 	lp.lpChan = lpChan
 
+	lp.activePhases = lp.activePhases
+
 	// event handlers
 	_ = lp.bus.Subscribe(evChargeStart, lp.evChargeStartHandler)
 	_ = lp.bus.Subscribe(evChargeStop, lp.evChargeStopHandler)
@@ -415,8 +418,8 @@ func (lp *LoadPoint) Prepare(uiChan chan<- util.Param, pushChan chan<- push.Even
 	lp.publish("title", lp.Title)
 	lp.publish("minCurrent", lp.MinCurrent)
 	lp.publish("maxCurrent", lp.MaxCurrent)
-	lp.publish("phases", lp.Phases)
-	lp.publish("activePhases", lp.Phases)
+	lp.publish("phases", lp.activePhases)
+	lp.publish("activePhases", lp.activePhases)
 	lp.publish("hasVehicle", len(lp.vehicles) > 0)
 
 	lp.Lock()
@@ -521,6 +524,49 @@ func (lp *LoadPoint) setLimit(chargeCurrent float64, force bool) (err error) {
 	}
 
 	return err
+}
+
+// phases1p3p implements the Charger.ChargePhases interface
+func (lp *LoadPoint) phases1p3p(phases int64) error {
+	if cp, ok := lp.charger.(api.ChargePhases); ok {
+		// switch only if phases state unknown or change needed
+		if lp.activePhases != phases {
+			err := cp.Phases1p3p(int(phases))
+			if err == nil {
+				lp.activePhases = phases
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (lp *LoadPoint) scalePhasesTo(phases int64) error {
+	err := lp.phases1p3p(phases)
+	if err == nil {
+		lp.activePhases = phases
+	}
+
+	return err
+}
+
+// scalePhases adjusts the number of active phases
+func (lp *LoadPoint) scalePhases(sitePower float64) error {
+	targetCurrent, _ := lp.targetCurrent(sitePower)
+
+	// scale down
+	if lp.activePhases > 1 && targetCurrent < lp.MinCurrent && sitePower >= lp.Disable.Threshold {
+		return lp.scalePhasesTo(1)
+	}
+
+	// scale up
+	if lp.activePhases == 1 && targetCurrent >= lp.MaxCurrent && sitePower <= 0 {
+		return lp.scalePhasesTo(3)
+	}
+
+	return nil
 }
 
 // connected returns the EVs connection state
@@ -777,10 +823,10 @@ func (lp *LoadPoint) pvDisableTimer() {
 func (lp *LoadPoint) pvMaxCurrent(mode api.ChargeMode, sitePower float64) float64 {
 	// calculate target charge current from delta power and actual current
 	effectiveCurrent := lp.effectiveCurrent()
-	deltaCurrent := powerToCurrent(-sitePower, lp.Phases)
+	deltaCurrent := powerToCurrent(-sitePower, lp.activePhases)
 	targetCurrent := math.Max(math.Min(effectiveCurrent+deltaCurrent, lp.GetMaxCurrent()), 0)
 
-	lp.log.DEBUG.Printf("max charge current: %.1fA = %.1fA + %.1fA (%.0fW @ %dp)", targetCurrent, effectiveCurrent, deltaCurrent, sitePower, lp.Phases)
+	lp.log.DEBUG.Printf("max charge current: %.1fA = %.1fA + %.1fA (%.0fW @ %dp)", targetCurrent, effectiveCurrent, deltaCurrent, sitePower, lp.activePhases)
 
 	// in MinPV mode return at least minCurrent
 	minCurrent := lp.GetMinCurrent()
