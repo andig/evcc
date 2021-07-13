@@ -18,11 +18,11 @@ export const Base = Template.bind({});
 Base.args = {
   gridConfigured: true,
   pvConfigured: true,
-  gridPower: 100,
-  pvPower: 100,
+  gridPower: 1340,
+  pvPower: 6420,
   batteryConfigured: true,
-  batteryPower: 100,
-  batterySoC: 0,
+  batteryPower: 800,
+  batterySoC: 66,
   loadpoints: [],
 };
 
@@ -30,11 +30,11 @@ export const Single = Template.bind({});
 Single.args = {
   gridConfigured: true,
   pvConfigured: true,
-  gridPower: 100,
-  pvPower: 100,
+  gridPower: -2300,
+  pvPower: 7000,
   batteryConfigured: true,
-  batteryPower: 100,
-  batterySoC: 0,
+  batteryPower: -2000,
+  batterySoC: 24,
   loadpoints: [
     {
       title: "Ladepunkt 1",
@@ -59,10 +59,10 @@ export const Multi = Template.bind({});
 Multi.args = {
   gridConfigured: true,
   pvConfigured: true,
-  gridPower: -100,
-  pvPower: 100,
-  batteryConfigured: true,
-  batteryPower: 100,
+  gridPower: -1000,
+  pvPower: 5500,
+  batteryConfigured: false,
+  batteryPower: 70,
   batterySoC: 60,
   loadpoints: [
     {

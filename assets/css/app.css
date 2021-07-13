@@ -1,29 +1,41 @@
+:root {
+	--evcc-green: #66d85a;
+	--evcc-dark-green: #3aba2c;
+	--evcc-yellow: #ffe000;
+
+	--evcc-grid: var(--bs-gray-dark);
+	--evcc-self: var(--evcc-dark-green);
+	--evcc-export: var(--evcc-yellow);
+
+	--bs-primary: var(--evcc-dark-green);
+}
+
+.bg-primary {
+	background-color: var(--evcc-dark-green) !important;
+}
+
 /* reverse loading animation */
 .progress-bar-animated {
 	animation-direction: reverse;
 }
-.btn.caption {
-	opacity: 1;
-}
-.btn.first {
-	border-top-left-radius: 0.2rem;
-	border-bottom-left-radius: 0.2rem;
-}
-code {
-	font-size: 87.5%;
-	color: #e83e8c;
-	word-wrap: break-word;
-}
-.value,
-input[type="radio"],
-label.btn {
-	white-space: nowrap !important;
-}
-.text-muted a,
-.text-muted a:hover {
-	color: #6c757d !important;
-	text-decoration: none;
-}
 .bg-muted {
 	opacity: 0.25;
+}
+.btn-outline-primary {
+	color: var(--bs-gray-dark);
+	border-color: var(--bs-gray-dark);
+}
+.btn-outline-primary:hover {
+	color: var(--bs-white);
+	background-color: var(--evcc-dark-green);
+	border-color: var(--bs-gray-dark);
+}
+.btn-check:active + .btn-outline-primary,
+.btn-check:checked + .btn-outline-primary,
+.btn-outline-primary.active,
+.btn-outline-primary.dropdown-toggle.show,
+.btn-outline-primary:active {
+	color: var(--bs-white);
+	background-color: var(--evcc-dark-green);
+	border-color: var(--bs-gray-dark);
 }

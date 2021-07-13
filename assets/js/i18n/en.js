@@ -29,12 +29,16 @@ export default {
     dismissAll: "Dismiss all",
   },
   main: {
-    siteDetails: {
-      import: "Import",
-      export: "Export",
-      production: "Production",
-      batteryShort: "Batt.",
-      batteryLong: "Battery",
+    energyflow: {
+      title: "Current Energyflow",
+      houseConsumption: "Consumption",
+      pvProduction: "Production",
+      battery: "Battery",
+      batteryCharge: "Battery charge",
+      batteryDischarge: "Battery discharge",
+      gridImport: "Grid import",
+      selfConsumption: "Self consumption",
+      pvExport: "Grid feed-in",
     },
     mode: {
       title: "Mode",

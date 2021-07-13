@@ -1,45 +1,16 @@
 {
   "name": "evcc",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "vue-cli-service build --watch --mode=development",
-    "build": "vue-cli-service build",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "prettier assets --write && eslint assets/**/*.js assets/**/*.vue --fix",
-    "storybook": "start-storybook -p 6006 -s assets,node_modules/bootstrap/dist",
-    "build-storybook": "build-storybook"
-  },
   "author": "naltatis & andig",
-  "license": "MIT",
-  "devDependencies": {
-    "@storybook/addon-actions": "^6.2.9",
-    "@storybook/addon-essentials": "^6.2.9",
-    "@storybook/addon-links": "^6.2.9",
-    "@storybook/addon-postcss": "^2.0.0",
-    "@storybook/vue": "^6.2.9",
-    "@vue/cli-service": "^4.5.13",
-    "@vue/component-compiler-utils": "^3.2.0",
-    "@vue/eslint-config-standard": "^6.0.0",
-    "eslint": "^7.26.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^3.4.0",
-    "eslint-plugin-promise": "^5.1.0",
-    "eslint-plugin-standard": "^5.0.0",
-    "eslint-plugin-vue": "^7.9.0",
-    "prettier": "^2.3.0",
-    "vue-template-compiler": "^2.6.12"
+  "scripts": {
+    "build": "vue-cli-service build",
+    "test": "vue-cli-service test:unit",
+    "lint": "prettier assets --write && eslint assets/**/*.js assets/**/*.vue --fix",
+    "build-storybook": "build-storybook",
+    "dev": "vue-cli-service build --watch --mode=development",
+    "storybook": "start-storybook -p 6006 -s assets,node_modules/bootstrap/dist"
   },
-  "engines": {
-    "npm": ">=6.0.0",
-    "node": ">=14.0.0"
-  },
-  "alias": {
-    "vue": "./node_modules/vue/dist/vue.js"
-  },
-  "repository": "github:andig/evcc",
+  "main": "index.js",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.35",
     "@fortawesome/free-regular-svg-icons": "^5.15.3",
@@ -51,8 +22,40 @@
     "vue": "^2.6.12",
     "vue-hot-reload-api": "^2.3.4",
     "vue-i18n": "^8.24.4",
+    "vue-meta": "^2.4.0",
     "vue-router": "^3.5.1"
   },
+  "devDependencies": {
+    "@storybook/addon-actions": "^6.2.9",
+    "@storybook/addon-essentials": "^6.2.9",
+    "@storybook/addon-links": "^6.2.9",
+    "@storybook/addon-postcss": "^2.0.0",
+    "@storybook/vue": "^6.2.9",
+    "@vue/cli-plugin-unit-jest": "^4.5.13",
+    "@vue/cli-service": "^4.5.13",
+    "@vue/component-compiler-utils": "^3.2.0",
+    "@vue/eslint-config-standard": "^6.0.0",
+    "@vue/test-utils": "^1.0.3",
+    "eslint": "^7.26.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-standard": "^5.0.0",
+    "eslint-plugin-vue": "^7.9.0",
+    "prettier": "^2.3.0",
+    "vue-template-compiler": "^2.6.12"
+  },
+  "alias": {
+    "vue": "./node_modules/vue/dist/vue.js"
+  },
+  "engines": {
+    "npm": ">=6.0.0",
+    "node": ">=14.0.0"
+  },
+  "license": "MIT",
+  "repository": "github:andig/evcc",
   "resolutions": {
     "node-forge": "0.10.0"
   }

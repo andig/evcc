@@ -1,4 +1,4 @@
-.PHONY: default all clean install install-ui ui assets lint lint-ui test build test-release release
+.PHONY: default all clean install install-ui ui assets lint test-ui lint-ui test build test-release release
 .PHONY: docker publish-testing publish-latest publish-images
 .PHONY: prepare-image image-rootfs image-update
 .PHONY: soc stamps
@@ -24,7 +24,7 @@ IMAGE_OPTIONS := -hostname evcc -http_port 8080 github.com/gokrazy/serial-busybo
 
 default: build
 
-all: clean install install-ui ui assets lint lint-ui test build
+all: clean install install-ui ui assets lint test-ui lint-ui test build
 
 clean:
 	rm -rf dist/
@@ -46,6 +46,9 @@ lint:
 
 lint-ui:
 	npm run lint
+
+test-ui:
+	npm run test
 
 test:
 	@echo "Running testsuite"

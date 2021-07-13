@@ -1,12 +1,15 @@
-import "../css/app.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap";
+import "../css/app.css";
 import Vue from "vue";
+import VueMeta from "vue-meta";
 import axios from "axios";
 import App from "./views/App";
 import router from "./router";
 import i18n from "./i18n";
 import store from "./store";
+
+Vue.use(VueMeta);
 
 const loc = window.location;
 axios.defaults.baseURL =
