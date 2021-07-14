@@ -34,13 +34,13 @@ func (m *MockUpdater) EXPECT() *MockUpdaterMockRecorder {
 }
 
 // Update mocks base method.
-func (m *MockUpdater) Update(arg0 float64) {
+func (m *MockUpdater) Update(arg0 float64, arg1 bool) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Update", arg0)
+	m.ctrl.Call(m, "Update", arg0, arg1)
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockUpdaterMockRecorder) Update(arg0 interface{}) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) Update(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUpdater)(nil).Update), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockUpdater)(nil).Update), arg0, arg1)
 }

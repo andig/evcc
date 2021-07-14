@@ -380,14 +380,6 @@ func (lp *LoadPoint) evChargeCurrentWrappedMeterHandler(current float64) {
 		// if disabled we cannot be charging
 		power = 0
 	}
-	// TODO
-	// else if power > 0 && lp.Site.pvMeter != nil {
-	// 	// limit charge power to generation plus grid consumption/ minus grid delivery
-	// 	// as the charger cannot have consumed more than that
-	// 	// consumedPower := consumedPower(lp.pvPower, lp.batteryPower, lp.gridPower)
-	// 	consumedPower := lp.Site.consumedPower()
-	// 	power = math.Min(power, consumedPower)
-	// }
 
 	// handler only called if charge meter was replaced by dummy
 	lp.chargeMeter.(*wrapper.ChargeMeter).SetPower(power)
@@ -992,7 +984,7 @@ func (lp *LoadPoint) publishSoCAndRange() {
 }
 
 // Update is the main control function. It reevaluates meters and charger state
-func (lp *LoadPoint) Update(sitePower float64) {
+func (lp *LoadPoint) Update(sitePower float64, cheap bool) {
 	mode := lp.GetMode()
 	lp.publish("mode", mode)
 
@@ -1079,6 +1071,13 @@ func (lp *LoadPoint) Update(sitePower float64) {
 		var required bool // false
 		if targetCurrent == 0 && lp.climateActive() {
 			targetCurrent = lp.GetMaxCurrent()
+			required = true
+		}
+
+		// tariff
+		if cheap {
+			targetCurrent = lp.GetMaxCurrent()
+			lp.log.DEBUG.Printf("cheap tariff: %.3gA", targetCurrent)
 			required = true
 		}
 

@@ -17,7 +17,7 @@ import (
 
 // Updater abstracts the LoadPoint implementation for testing
 type Updater interface {
-	Update(float64)
+	Update(float64, bool)
 }
 
 // Site is the main configuration container. A site can host multiple loadpoints.
@@ -42,6 +42,7 @@ type Site struct {
 	pvMeter      api.Meter // PV generation meter
 	batteryMeter api.Meter // Battery charging meter
 
+	tariff     api.Tariff   // Tariff
 	loadpoints []*LoadPoint // Loadpoints
 
 	// cached state
@@ -63,6 +64,7 @@ func NewSiteFromConfig(
 	cp configProvider,
 	other map[string]interface{},
 	loadpoints []*LoadPoint,
+	tariff api.Tariff,
 ) (*Site, error) {
 	site := NewSite()
 	if err := util.DecodeOther(other, &site); err != nil {
@@ -70,6 +72,7 @@ func NewSiteFromConfig(
 	}
 
 	Voltage = site.Voltage
+	site.tariff = tariff
 	site.loadpoints = loadpoints
 
 	if site.Meters.GridMeterRef != "" {
@@ -314,8 +317,13 @@ func (site *Site) sitePower() (float64, error) {
 func (site *Site) update(lp Updater) {
 	site.log.DEBUG.Println("----")
 
+	var cheap bool
+	if site.tariff != nil {
+		cheap = site.tariff.IsCheap()
+	}
+
 	if sitePower, err := site.sitePower(); err == nil {
-		lp.Update(sitePower)
+		lp.Update(sitePower, cheap)
 		site.Health.Update()
 	}
 }

@@ -53,6 +53,18 @@ vehicles:
   vin: WREN...
   cache: 5m
 
+# tariffs are the fixed or variable tariffs
+# cheap can be used to define a tariff rate considered cheap enough for charging
+tariffs:
+  fixed:
+    price: 0.25 # future use, fixed tariff is never considered cheap
+  awattar:
+    cheap: 50.1
+  tibber:
+    token: "api token"
+    homeid: "d1007ead2dc84a2b82f0de19451c5fb22112f7ae11d19bf2bedb224a003ff74a"
+    cheap: 50.1
+
 # site describes the EVU connection, PV and home battery
 site:
   title: Home # display name for UI

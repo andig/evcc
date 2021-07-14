@@ -129,3 +129,7 @@ type VehicleStartCharge interface {
 type VehicleStopCharge interface {
 	StopCharge() error
 }
+
+type Tariff interface {
+	IsCheap() bool
+}
