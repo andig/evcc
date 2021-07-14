@@ -14,7 +14,7 @@ const (
 // Adapter provides the required methods for interacting with the loadpoint
 type Adapter interface {
 	Publish(key string, val interface{})
-	SocEstimator() *Estimator
+	Estimator() *Estimator
 	ActivePhases() int64
 	Voltage() float64
 }
@@ -59,7 +59,7 @@ func (lp *Timer) StartRequired() bool {
 		return false
 	}
 
-	se := lp.SocEstimator()
+	se := lp.Estimator()
 	if !lp.active() || se == nil {
 		return false
 	}
@@ -67,7 +67,7 @@ func (lp *Timer) StartRequired() bool {
 	power := float64(lp.ActivePhases()) * lp.maxCurrent * lp.Voltage()
 
 	// time
-	remainingDuration := se.RemainingChargeDuration(power, lp.SoC)
+	remainingDuration := se.RemainingChargeDuration(lp.SoC, power, -1)
 	lp.finishAt = time.Now().Add(remainingDuration).Round(time.Minute)
 	lp.log.DEBUG.Printf("target charging active for %v: projected %v (%v remaining)", lp.Time, lp.finishAt, remainingDuration.Round(time.Minute))
 
